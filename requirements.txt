@@ -1,0 +1,4 @@
+# Aucune dépendance externe : BlairBot n'utilise que la bibliothèque
+# standard Python (http.server en local, WSGI pur pour api/index.py sur
+# Vercel). Ce fichier existe pour que l'étape "pip install" de Vercel ait
+# quelque chose à traiter sans erreur.
