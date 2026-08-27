@@ -227,6 +227,13 @@ def app(environ, start_response):
     method = environ.get("REQUEST_METHOD", "GET")
     path = environ.get("PATH_INFO", "/") or "/"
 
+    # DEBUG TEMPORAIRE : ?debug=1 renvoie le contenu brut de environ, pour
+    # diagnostiquer pourquoi PATH_INFO ne semble pas correspondre à l'URL
+    # réellement demandée sur Vercel. À retirer une fois le routage corrigé.
+    if "debug=1" in environ.get("QUERY_STRING", ""):
+        dump = {k: str(v) for k, v in environ.items() if k not in ("wsgi.input", "wsgi.errors")}
+        return _json_response(start_response, dump)
+
     if method == "GET":
         if path in ("/", "/index.html"):
             return _html_response(start_response, render_vercel_page())
