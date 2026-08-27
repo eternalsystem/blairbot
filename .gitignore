@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+web_state.json
+github.txt
