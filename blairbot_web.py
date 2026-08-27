@@ -46,6 +46,9 @@ for _stream in (sys.stdout, sys.stderr):
 from web_core import (
     BASE_CSS,
     QUESTIONS,
+    SINGLE_MODE_BUTTON_HTML,
+    SINGLE_MODE_VIEW_HTML,
+    SINGLE_QUESTION_JS,
     build_results,
     render_ghosts_page,
     render_mode_options,
@@ -95,6 +98,7 @@ PAGE_TEMPLATE = Template(r"""<!doctype html>
       <div id="results">Chargement…</div>
       <div class="controls">
         <a class="navlink" href="/fantomes" target="_blank" rel="noopener">📖 Fiches des fantômes</a>
+        $SINGLE_MODE_BUTTON
         <select id="mode-select" title="Nombre de preuves cette partie">$MODE_OPTIONS</select>
         <button id="reset-btn" type="button">Réinitialiser</button>
       </div>
@@ -106,11 +110,14 @@ PAGE_TEMPLATE = Template(r"""<!doctype html>
       Coche <b>Oui</b> / <b>Non</b> / <b>Pas sûr</b> au fil de ton enquête, dans n'importe quel
       ordre. Le classement en haut se met à jour tout seul. Pour une <b>preuve</b>,
       ne réponds « Non » que si tu l'as vraiment vérifiée en jeu et qu'elle n'y est pas —
-      sinon laisse « Pas sûr ».
+      sinon laisse « Pas sûr ». « 🎯 Question par question » pose les questions une par
+      une dans l'ordre le plus utile — sors-en quand tu veux.
     </div>
   </header>
 
-  <div class="unanswered-panel">
+  $SINGLE_MODE_VIEW
+
+  <div class="unanswered-panel" id="unanswered-panel">
     <div class="panel-title">
       <span>❓ À répondre</span>
       <span class="panel-hint">triées par utilité : les plus décisives en premier</span>
@@ -118,7 +125,7 @@ PAGE_TEMPLATE = Template(r"""<!doctype html>
     <div class="qlist" id="unanswered-list">$UNANSWERED_HTML</div>
   </div>
 
-  <details class="category">
+  <details class="category" id="answered-details">
     <summary>✅ Déjà répondu <span class="count" id="answered-count">($ANSWERED_COUNT)</span></summary>
     <div class="qlist" id="answered-list">$ANSWERED_HTML</div>
   </details>
@@ -197,6 +204,8 @@ document.getElementById("reset-btn").addEventListener("click", async () => {
   renderResults(r, true);
 });
 
+$SINGLE_QUESTION_JS
+
 renderResults(INITIAL_RESULTS, false);
 </script>
 </body>
@@ -217,6 +226,9 @@ def render_page():
         ANSWERED_HTML=results["answered_html"],
         ANSWERED_COUNT=results["answered"],
         INITIAL_RESULTS_JSON=json.dumps(initial_json, ensure_ascii=False),
+        SINGLE_MODE_BUTTON=SINGLE_MODE_BUTTON_HTML,
+        SINGLE_MODE_VIEW=SINGLE_MODE_VIEW_HTML,
+        SINGLE_QUESTION_JS=SINGLE_QUESTION_JS,
     )
 
 

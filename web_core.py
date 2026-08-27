@@ -239,10 +239,12 @@ def render_mode_options(evidence_mode):
 
 BASE_CSS = r"""
   :root {
-    --bg: #0f1115; --panel: #171a21; --panel2: #1f2330; --border: #2a2f3d;
-    --text: #e8e9ee; --muted: #9aa0b0; --accent: #8b5cf6;
-    --oui: #22c55e; --non: #ef4444; --pas-sur: #6b7280;
+    --bg: #050505; --panel: #131313; --panel2: #1c1c1c; --border: #333333;
+    --text: #f4f4f4; --muted: #929292; --accent: #ffffff;
   }
+  /* Thème strictement noir & blanc : au cas où une couleur se glisserait
+     quelque part (emoji compris), un garde-fou global en niveaux de gris. */
+  html { filter: grayscale(1); }
   * { box-sizing: border-box; }
   body {
     margin: 0; font-family: -apple-system, Segoe UI, Roboto, sans-serif;
@@ -250,12 +252,12 @@ BASE_CSS = r"""
   }
   .wrap { max-width: 820px; margin: 0 auto; padding: 0 1rem; }
   header { padding: 1.5rem 0 1rem; }
-  h1 { font-size: 1.4rem; margin: 0 0 0.3rem; }
+  h1 { font-size: 1.4rem; margin: 0 0 0.3rem; font-weight: 700; letter-spacing: -0.01em; }
   .subtitle { color: var(--muted); font-size: 0.9rem; line-height: 1.5; }
-  .navlink { color: var(--accent); text-decoration: none; font-size: 0.85rem; }
-  .navlink:hover { text-decoration: underline; }
+  .navlink { color: var(--text); text-decoration: none; font-size: 0.85rem; border-bottom: 1px solid var(--muted); }
+  .navlink:hover { border-color: var(--text); }
   .topbar {
-    position: sticky; top: 0; z-index: 10; background: rgba(15,17,21,0.97);
+    position: sticky; top: 0; z-index: 10; background: rgba(5,5,5,0.97);
     backdrop-filter: blur(6px); border-bottom: 1px solid var(--border);
     padding: 0.75rem 0;
   }
@@ -265,8 +267,11 @@ BASE_CSS = r"""
   select, button {
     background: var(--panel2); color: var(--text); border: 1px solid var(--border);
     border-radius: 6px; padding: 0.4rem 0.6rem; font-size: 0.85rem; cursor: pointer;
+    font-family: inherit;
   }
   button:hover, select:hover { border-color: var(--accent); }
+  button.primary { background: var(--text); color: #000; border-color: var(--text); font-weight: 600; }
+  button.primary:hover { background: #d8d8d8; }
   details.category {
     background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
     margin: 0.7rem 0; overflow: hidden;
@@ -288,10 +293,10 @@ BASE_CSS = r"""
     padding: 0.65rem 1rem; border-bottom: 1px solid var(--border);
   }
   .question:last-child { border-bottom: none; }
-  .question.culprit { background: rgba(234, 179, 8, 0.12); box-shadow: inset 3px 0 0 #eab308; }
+  .question.culprit { background: rgba(255, 255, 255, 0.06); box-shadow: inset 3px 0 0 #fff; }
   .qtext { font-size: 0.88rem; line-height: 1.4; }
   .tag {
-    display: inline-block; font-size: 0.68rem; color: var(--accent); border: 1px solid var(--accent);
+    display: inline-block; font-size: 0.68rem; color: var(--muted); border: 1px solid var(--border);
     border-radius: 4px; padding: 0.05rem 0.35rem; margin-right: 0.5rem; vertical-align: middle;
     white-space: nowrap;
   }
@@ -303,28 +308,45 @@ BASE_CSS = r"""
     cursor: pointer; color: var(--muted); user-select: none;
   }
   .opt input { accent-color: var(--accent); margin: 0; }
-  /* :has() couvre les navigateurs récents ; .is-checked (posé en JS) sert de
-     filet pour les navigateurs plus anciens qui ne le supportent pas. */
-  .opt-oui:has(input:checked), .opt-oui.is-checked { border-color: var(--oui); color: var(--oui); background: rgba(34,197,94,0.1); }
-  .opt-non:has(input:checked), .opt-non.is-checked { border-color: var(--non); color: var(--non); background: rgba(239,68,68,0.1); }
-  .opt-sais_pas:has(input:checked), .opt-sais_pas.is-checked { border-color: var(--pas-sur); color: var(--text); }
+  /* Pas de couleur pour distinguer oui/non/pas sûr : on joue sur le
+     remplissage et l'épaisseur de bordure. :has() couvre les navigateurs
+     récents ; .is-checked (posé en JS) sert de filet pour les autres. */
+  .opt-oui:has(input:checked), .opt-oui.is-checked { background: #fff; color: #000; border-color: #fff; font-weight: 600; }
+  .opt-non:has(input:checked), .opt-non.is-checked { border-color: #fff; border-width: 2px; color: var(--text); }
+  .opt-sais_pas:has(input:checked), .opt-sais_pas.is-checked { background: #2b2b2b; color: var(--text); border-color: #555; }
   .winner { font-size: 1.05rem; }
   .winner strong { color: var(--accent); }
   .ranking { margin: 0.2rem 0 0; padding-left: 1.1rem; max-height: 5.5rem; overflow-y: auto; }
   .ranking li { font-size: 0.85rem; margin-bottom: 0.15rem; }
-  .pct { color: var(--accent); font-variant-numeric: tabular-nums; }
-  .warn { color: #eab308; }
+  .pct { color: var(--accent); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .warn { color: var(--text); font-weight: 700; }
   footer { text-align: center; color: var(--muted); font-size: 0.75rem; margin-top: 2rem; }
+  /* Mode question par question */
+  .single-view { margin: 1.2rem 0; }
+  .exit-single-btn {
+    background: none; border: none; color: var(--muted); cursor: pointer;
+    font-size: 0.85rem; padding: 0; margin-bottom: 1rem; border-bottom: 1px solid var(--muted);
+  }
+  .exit-single-btn:hover { color: var(--text); border-color: var(--text); }
+  #single-question-slot .question {
+    flex-direction: column; align-items: stretch; gap: 1.4rem; border: 1px solid var(--border);
+    border-radius: 14px; background: var(--panel); padding: 2.2rem 1.6rem; text-align: center;
+  }
+  #single-question-slot .tag { display: inline-block; margin: 0 auto 0.3rem; }
+  #single-question-slot .qtext { font-size: 1.2rem; line-height: 1.55; }
+  #single-question-slot .opts { justify-content: center; gap: 0.7rem; }
+  #single-question-slot .opt { font-size: 0.95rem; padding: 0.55rem 1.4rem; border-radius: 8px; }
   /* Page "Fiches des fantômes" */
   .ghost-index { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 1rem 0; }
   .ghost-index a {
     background: var(--panel2); border: 1px solid var(--border); border-radius: 6px;
     padding: 0.25rem 0.6rem; font-size: 0.8rem; color: var(--text); text-decoration: none;
   }
-  .ghost-index a:hover { border-color: var(--accent); color: var(--accent); }
+  .ghost-index a:hover { border-color: var(--accent); }
   #search {
     width: 100%; margin: 0.7rem 0 0.2rem; background: var(--panel2); color: var(--text);
     border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem 0.7rem; font-size: 0.9rem;
+    font-family: inherit;
   }
   .ghost-card {
     background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
@@ -333,7 +355,7 @@ BASE_CSS = r"""
   .ghost-card h2 { margin: 0 0 0.6rem; font-size: 1.15rem; color: var(--accent); }
   .ev-badges { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.8rem; }
   .ev-badge {
-    background: rgba(139,92,246,0.15); border: 1px solid var(--accent); color: var(--accent);
+    background: rgba(255,255,255,0.08); border: 1px solid var(--border); color: var(--text);
     border-radius: 5px; padding: 0.15rem 0.5rem; font-size: 0.75rem;
   }
   .ghost-desc { font-size: 0.9rem; line-height: 1.55; margin: 0 0 0.9rem; }
@@ -342,6 +364,80 @@ BASE_CSS = r"""
   .clues li { margin-bottom: 0.25rem; }
   .empty-clue { color: var(--muted); font-style: italic; }
 """
+
+# --------------------------------------------------------------------------
+# JS du mode "question par question" — partagé entre blairbot_web.py (local)
+# et api/index.py (Vercel) car il ne touche à rien de spécifique à la
+# gestion d'état : il pioche juste la première question de la liste déjà
+# triée par priorité (unanswered_html) et l'affiche seule. On "encapsule"
+# la fonction renderResults existante (déjà définie différemment dans
+# chaque template) pour la déclencher aussi à chaque réponse, sans avoir à
+# dupliquer les points d'appel.
+# --------------------------------------------------------------------------
+SINGLE_QUESTION_JS = r"""
+let singleMode = false;
+let lastResults = null;
+
+function getTopQuestionHTML(unansweredHtml) {
+  const tmp = document.createElement("div");
+  tmp.innerHTML = unansweredHtml;
+  const first = tmp.querySelector(".question");
+  return first ? first.outerHTML : null;
+}
+
+function renderSingleQuestion(r) {
+  const slot = document.getElementById("single-question-slot");
+  if (!slot) return;
+  if (r.contradiction) {
+    slot.innerHTML = '<p class="empty">⚠️ Contradiction détectée dans tes réponses — reviens à la liste complète pour repérer la réponse surlignée et la repasser en « Pas sûr ».</p>';
+    return;
+  }
+  const html = getTopQuestionHTML(r.unanswered_html);
+  slot.innerHTML = html || '<p class="empty">✅ Plus de question utile pour l\'instant — regarde le résultat en haut de page.</p>';
+}
+
+function enterSingleMode() {
+  singleMode = true;
+  document.getElementById("single-question-view").hidden = false;
+  document.getElementById("unanswered-panel").hidden = true;
+  document.getElementById("answered-details").hidden = true;
+  document.getElementById("single-mode-btn").hidden = true;
+  if (lastResults) renderSingleQuestion(lastResults);
+}
+
+function exitSingleMode() {
+  singleMode = false;
+  document.getElementById("single-question-view").hidden = true;
+  document.getElementById("unanswered-panel").hidden = false;
+  document.getElementById("answered-details").hidden = false;
+  document.getElementById("single-mode-btn").hidden = false;
+}
+
+document.getElementById("single-mode-btn").addEventListener("click", enterSingleMode);
+document.getElementById("exit-single-mode-btn").addEventListener("click", exitSingleMode);
+
+const _renderResultsBase = renderResults;
+renderResults = function (r, updateLists) {
+  lastResults = r;
+  _renderResultsBase(r, updateLists);
+  if (singleMode) renderSingleQuestion(r);
+};
+"""
+
+# Bouton à ajouter dans la barre du haut (topbar), à côté du sélecteur de
+# mode / du bouton réinitialiser.
+SINGLE_MODE_BUTTON_HTML = (
+    '<button id="single-mode-btn" type="button">🎯 Question par question</button>'
+)
+
+# Bloc "vue plein écran d'une seule question", masqué par défaut — inséré
+# juste avant la liste normale des questions.
+SINGLE_MODE_VIEW_HTML = (
+    '<div class="single-view" id="single-question-view" hidden>'
+    '<button class="exit-single-btn" id="exit-single-mode-btn" type="button">← Retour à la liste complète</button>'
+    '<div id="single-question-slot"></div>'
+    "</div>"
+)
 
 
 # --------------------------------------------------------------------------
