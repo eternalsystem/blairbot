@@ -22,6 +22,7 @@ import json
 import os
 import sys
 from string import Template
+from urllib.parse import parse_qs
 
 # ghosts_data.py et web_core.py sont à la racine du repo, un niveau
 # au-dessus de ce fichier (api/index.py) : on l'ajoute au chemin d'import.
@@ -223,16 +224,25 @@ def _json_response(start_response, obj, status="200 OK"):
     return [body]
 
 
+def _resolve_path(environ):
+    """Détermine le chemin réellement demandé.
+
+    Sur Vercel, vercel.json route tout vers ce fichier via "routes" (pas
+    "rewrites" : celui-ci ne préservait pas le chemin d'origine dans
+    l'environ WSGI, PATH_INFO restait figé sur "/api/index" quel que soit
+    l'URL demandée). Le vrai chemin est glissé dans le paramètre de requête
+    "vpath" par la règle "dest": "/api/index.py?vpath=$1". En local ou dans
+    un autre contexte WSGI (tests), on retombe sur PATH_INFO classique.
+    """
+    params = parse_qs(environ.get("QUERY_STRING", ""), keep_blank_values=True)
+    if "vpath" in params:
+        return "/" + params["vpath"][0].lstrip("/")
+    return environ.get("PATH_INFO", "/") or "/"
+
+
 def app(environ, start_response):
     method = environ.get("REQUEST_METHOD", "GET")
-    path = environ.get("PATH_INFO", "/") or "/"
-
-    # DEBUG TEMPORAIRE : ?debug=1 renvoie le contenu brut de environ, pour
-    # diagnostiquer pourquoi PATH_INFO ne semble pas correspondre à l'URL
-    # réellement demandée sur Vercel. À retirer une fois le routage corrigé.
-    if "debug=1" in environ.get("QUERY_STRING", ""):
-        dump = {k: str(v) for k, v in environ.items() if k not in ("wsgi.input", "wsgi.errors")}
-        return _json_response(start_response, dump)
+    path = _resolve_path(environ)
 
     if method == "GET":
         if path in ("/", "/index.html"):
